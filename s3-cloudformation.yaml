@@ -1,0 +1,46 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  MyBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: !Ref MyKey
+  MyKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: Key for encrypting objects in MyBucket
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: Allow administration of the key
+            Effect: Allow
+            Principal:
+              AWS: !Ref MyKeyPrincipal
+            Action:
+            - kms:*
+            Resource: '*'
+          - Sid: Allow use of the key
+            Effect: Allow
+            Principal:
+              Service: s3.amazonaws.com
+            Action:
+            - kms:Encrypt
+            - kms:Decrypt
+            - kms:ReEncrypt*
+            - kms:GenerateDataKey*
+            Resource: '*'
+  MyKeyPrincipal:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: MyKeyPrincipal
+Outputs:
+  MyBucketName:
+    Value: !Ref MyBucket
+    Description: The name of the S3 bucket
+  MyKeyArn:
+    Value: !GetAtt MyKey.Arn
+    Description: The ARN of the KMS key
